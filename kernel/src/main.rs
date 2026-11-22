@@ -1,5 +1,8 @@
 #![no_std]
 #![no_main]
+#![feature(abi_x86_interrupt)]
+
+mod interrupts;
 
 use bootloader_api::{BootInfo, entry_point};
 use core::fmt::Write;
@@ -11,6 +14,9 @@ entry_point!(kernel_main);
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     let mut serial = serial();
     let _ = writeln!(serial, "Rusty OS: kernel entry reached");
+    interrupts::init();
+    x86_64::instructions::interrupts::int3();
+    let _ = writeln!(serial, "Rusty OS: breakpoint exception handled");
 
     let Some(framebuffer) = boot_info.framebuffer.as_mut() else {
         let _ = writeln!(serial, "Rusty OS: no framebuffer available");

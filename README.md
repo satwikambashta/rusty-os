@@ -11,7 +11,10 @@ The kernel uses the `bootloader_api` interface to display a text console on the
 bootloader-provided framebuffer and writes boot and panic messages to the COM1
 serial port. The framebuffer console supports RGB, BGR, grayscale, and common
 packed pixel formats, with line wrapping and scrolling. The root package builds
-a BIOS boot image and `cargo run` launches it in QEMU.
+a BIOS boot image and `cargo run` launches it in QEMU. The kernel installs an
+interrupt descriptor table for divide errors, breakpoints, invalid opcodes,
+general protection faults, and page faults; fatal exceptions include the
+interrupt stack frame in serial output.
 
 ## Build
 
@@ -31,9 +34,11 @@ additional arguments to QEMU after `cargo run --`, for example
 
 ## Roadmap
 
-- Set up framebuffer output, CPU exception handling, and hardware interrupts.
+- Add a task-state segment and dedicated double-fault stack, then configure the
+  programmable interrupt controller and hardware interrupts.
 - Implement physical and virtual memory management and a kernel heap.
 - Add task scheduling, async support, and device drivers.
 
-The implementation is being developed incrementally; memory management and
-multitasking from the reference series are not implemented yet.
+The implementation is being developed incrementally; double-fault recovery,
+hardware interrupts, memory management, and multitasking are not implemented
+yet.
