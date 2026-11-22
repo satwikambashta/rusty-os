@@ -2,11 +2,18 @@ use core::fmt::Write;
 use spin::Lazy;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 
+use rusty_os_kernel::gdt::DOUBLE_FAULT_IST_INDEX;
+
 static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
     let mut idt = InterruptDescriptorTable::new();
     idt.divide_error.set_handler_fn(divide_error_handler);
     idt.breakpoint.set_handler_fn(breakpoint_handler);
     idt.invalid_opcode.set_handler_fn(invalid_opcode_handler);
+    unsafe {
+        idt.double_fault
+            .set_handler_fn(double_fault_handler)
+            .set_stack_index(DOUBLE_FAULT_IST_INDEX);
+    }
     idt.general_protection_fault
         .set_handler_fn(general_protection_fault_handler);
     idt.page_fault.set_handler_fn(page_fault_handler);
@@ -14,7 +21,12 @@ static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
 });
 
 pub fn init() {
+    rusty_os_kernel::gdt::init();
     IDT.load();
+}
+
+extern "x86-interrupt" fn double_fault_handler(frame: InterruptStackFrame, error_code: u64) -> ! {
+    fatal_exception("double fault", frame, Some(error_code));
 }
 
 extern "x86-interrupt" fn divide_error_handler(frame: InterruptStackFrame) {
